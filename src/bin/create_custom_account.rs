@@ -1,3 +1,4 @@
+use miden_client::accounts::{AccountData, AccountStorage};
 use miden_client::notes::Note;
 use miden_objects::accounts::AccountComponent;
 use miden_objects::assembly::Assembler;
@@ -29,11 +30,15 @@ use miden_client::{
 use miden_lib::accounts::wallets::BasicWallet;
 
 // use miden_crypto::rand::FeltRng;
-use miden_lib::StdLibrary;
-
 use figment::{
     providers::{Format, Toml},
     Figment,
+};
+use miden_lib::StdLibrary;
+use miden_objects::{
+    accounts::AuthSecretKey,
+    assets::TokenSymbol,
+    crypto::{dsa::rpo_falcon512::SecretKey, rand::FeltRng},
 };
 
 const CLIENT_CONFIG_FILE_NAME: &str = "miden-client.toml";
@@ -99,7 +104,7 @@ async fn main() -> Result<(), ClientError> {
     let rpc_client = Box::new(TonicRpcClient::new(&client_config.rpc));
 
     // Instantiate the client
-    let mut _client = Client::new(
+    let mut client = Client::new(
         rpc_client,
         rng_for_client,
         arc_store.clone(),
@@ -108,7 +113,41 @@ async fn main() -> Result<(), ClientError> {
         false, // set to true if you want debug mode
     );
 
-    let file_path = Path::new("masm/amm_note.masm");
+    // Initializing Account
+    let file_path = Path::new("masm/basic_account.masm");
+
+    // Read the file contents
+    let masm_code = fs::read_to_string(file_path).expect("Failed to read the file");
+
+    let assembler: Assembler = TransactionKernel::assembler();
+    let account_component = AccountComponent::compile(masm_code, assembler, vec![])
+        .unwrap()
+        .with_supports_all_types();
+    let account_code = AccountCode::from_components(
+        &[account_component],
+        AccountType::RegularAccountUpdatableCode,
+    )
+    .unwrap();
+
+    println!(
+        "number of procedures in account: {:?}",
+        account_code.num_procedures()
+    );
+
+    // let seed = [Felt::new(1), Felt::new(2), Felt::new(3), Felt::new(4)];
+    // let account_storage = AccountStorage::new(vec![]).unwrap();
+
+    // let account = Account::new(seed, account_code, account_storage).unwrap();
+
+    // let key_pair = SecretKey::with_rng();
+    // let account_data = AccountData::new(account, None, AuthSecretKey::RpoFalcon512(key_pair));
+    // let account_data = AccountData::new;
+    // client.new_account(template);
+    // let account = Account::from_parts(id, vault, storage, code, nonce)
+
+    // Initializing Note
+
+    let file_path = Path::new("masm/caller_note.masm");
 
     // Read the file contents
     let masm_code = fs::read_to_string(file_path).expect("Failed to read the file");
@@ -147,26 +186,7 @@ async fn main() -> Result<(), ClientError> {
 
     println!("Note hash: {:?}", note.hash());
 
-    // Initializing Account
-    let file_path = Path::new("masm/basic_account.masm");
-
-    // Read the file contents
-    let masm_code = fs::read_to_string(file_path).expect("Failed to read the file");
-
-    let assembler: Assembler = TransactionKernel::assembler();
-    let account_component = AccountComponent::compile(masm_code, assembler, vec![])
-        .unwrap()
-        .with_supports_all_types();
-    let account_code = AccountCode::from_components(
-        &[account_component],
-        AccountType::RegularAccountUpdatableCode,
-    )
-    .unwrap();
-
-    println!(
-        "number of procedures in account: {:?}",
-        account_code.num_procedures()
-    );
+    // create note that calls #4 procedure
 
     Ok(())
 }

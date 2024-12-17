@@ -8,6 +8,10 @@ begin
     # drop note root
     dropw
 
+    push.111
+    debug.stack
+    drop
+
     push.0 exec.note::get_inputs drop drop
     mem_load.1 mem_load.0 padw
     # => [0,0,0,0, account_id_recipient, token_out_id]
