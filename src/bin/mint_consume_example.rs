@@ -145,6 +145,9 @@ async fn main() -> Result<(), ClientError> {
     //------------------------------------------------------------
     println!("\n[STEP 3] Minting 5 notes of 100 tokens each for Alice.");
 
+    client.sync_state().await?;
+    tokio::time::sleep(Duration::from_secs(5)).await;
+
     for i in 1..=5 {
         let amount = 100;
         let fungible_asset = FungibleAsset::new(faucet_account.id(), amount)
