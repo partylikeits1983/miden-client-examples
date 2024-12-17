@@ -169,7 +169,7 @@ async fn main() -> Result<(), ClientError> {
         println!("Minted note #{} of {} tokens for Alice.", i, amount);
     }
 
-    // Let's sync state to ensure all notes are visible to the client
+    // Sync state to ensure all notes are visible to the client
     client.sync_state().await?;
     println!("All 5 notes minted for Alice successfully!");
 
@@ -216,9 +216,7 @@ async fn main() -> Result<(), ClientError> {
     //------------------------------------------------------------
     println!("\n[STEP 5] Alice sends 5 notes of 50 tokens each to Bob.");
 
-    // For sending tokens, we create a payment transaction 5 times.
     for i in 1..=5 {
-        // Prepare a new fungible asset with amount = 50
         let send_amount = 50;
         let fungible_asset = FungibleAsset::new(faucet_account.id(), send_amount)
             .expect("Failed to create fungible asset for sending.");
@@ -253,7 +251,7 @@ async fn main() -> Result<(), ClientError> {
 
     let expected_note_count = 5;
     loop {
-        // Re-sync the client state to ensure we have the latest info.
+        // Re-sync the client state
         client.sync_state().await?;
 
         // Fetch consumable notes for Bob
@@ -265,7 +263,6 @@ async fn main() -> Result<(), ClientError> {
                 "Bob now has {} consumable notes, as expected!",
                 bob_note_count
             );
-            // Optionally, print the IDs of the notes.
             for (note, _) in bob_notes {
                 println!("Bob's note ID: {}", note.id());
             }
