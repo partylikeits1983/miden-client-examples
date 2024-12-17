@@ -26,6 +26,7 @@ use miden_client::{
     },
     Client, ClientError, Felt,
 };
+use miden_lib::accounts::wallets::BasicWallet;
 
 // use miden_crypto::rand::FeltRng;
 use miden_lib::StdLibrary;
@@ -162,7 +163,10 @@ async fn main() -> Result<(), ClientError> {
     )
     .unwrap();
 
-    println!("number of procedures in account: {:?}", account_code.num_procedures());
+    println!(
+        "number of procedures in account: {:?}",
+        account_code.num_procedures()
+    );
 
     Ok(())
 }
