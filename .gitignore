@@ -3,3 +3,5 @@
 *.sqlite3
 node/storage/*
 node/config/accounts/*
+
+node_modules/

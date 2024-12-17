@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use miden_client::{
-    accounts::{AccountStorageMode, AccountTemplate},
+    accounts::{AccountId, AccountStorageMode, AccountTemplate},
     assets::{FungibleAsset, TokenSymbol},
     config::{Endpoint, RpcConfig},
     crypto::RpoRandomCoin,
@@ -89,16 +89,11 @@ async fn main() -> Result<(), ClientError> {
     );
 
     //------------------------------------------------------------
-    // STEP 1: Create two basic wallet accounts: Alice & Bob
+    // STEP 1: Create a basic wallet account for Alice
     //------------------------------------------------------------
-    println!("\n[STEP 1] Creating two new accounts: Alice and Bob.");
+    println!("\n[STEP 1] Creating new account for Alice");
 
     let alice_template = AccountTemplate::BasicWallet {
-        mutable_code: false,
-        storage_mode: AccountStorageMode::Private,
-    };
-
-    let bob_template = AccountTemplate::BasicWallet {
         mutable_code: false,
         storage_mode: AccountStorageMode::Private,
     };
@@ -108,13 +103,6 @@ async fn main() -> Result<(), ClientError> {
     println!(
         "Successfully created Alice's wallet. ID: {:?}",
         alice_account.id()
-    );
-
-    // Create Bob's account
-    let (bob_account, _bob_seed) = client.new_account(bob_template).await?;
-    println!(
-        "Successfully created Bob's wallet. ID: {:?}",
-        bob_account.id()
     );
 
     //------------------------------------------------------------
@@ -212,11 +200,14 @@ async fn main() -> Result<(), ClientError> {
         }
     }
     //------------------------------------------------------------
-    // STEP 5: Using Alice's wallet, send 5 notes of 50 tokens each to Bob
+    // STEP 5: Using Alice's wallet, send 5 notes of 50 tokens each to list of users
     //------------------------------------------------------------
-    println!("\n[STEP 5] Alice sends 5 notes of 50 tokens each to Bob.");
+    println!("\n[STEP 5] Alice sends 5 notes of 50 tokens each to 5 different users.");
 
     for i in 1..=5 {
+        let target_account_string = format!("0x{:016x}", i);
+        let target_account_id = AccountId::from_hex(&target_account_string).unwrap();
+
         let send_amount = 50;
         let fungible_asset = FungibleAsset::new(faucet_account.id(), send_amount)
             .expect("Failed to create fungible asset for sending.");
@@ -224,7 +215,7 @@ async fn main() -> Result<(), ClientError> {
         let payment_transaction = PaymentTransactionData::new(
             vec![fungible_asset.into()],
             alice_account.id(),
-            bob_account.id(),
+            target_account_id,
         );
 
         // Create a pay-to-id transaction
@@ -241,40 +232,16 @@ async fn main() -> Result<(), ClientError> {
             .await?;
 
         client.submit_transaction(tx_execution_result).await?;
-        println!("Sent note #{} of {} tokens to Bob.", i, send_amount);
+        println!(
+            "Sent note #{} of {} tokens to AccountId {}.",
+            i, send_amount, target_account_id
+        );
     }
 
     println!("\nAll steps completed successfully!");
     println!("Alice created a wallet, Bob created a wallet, a faucet was deployed,");
     println!("5 notes of 100 tokens were minted to Alice, those notes were consumed,");
-    println!("and then Alice sent 5 separate 50-token notes to Bob.");
-
-    let expected_note_count = 5;
-    loop {
-        // Re-sync the client state
-        client.sync_state().await?;
-
-        // Fetch consumable notes for Bob
-        let bob_notes = client.get_consumable_notes(Some(bob_account.id())).await?;
-        let bob_note_count = bob_notes.len();
-
-        if bob_note_count == expected_note_count {
-            println!(
-                "Bob now has {} consumable notes, as expected!",
-                bob_note_count
-            );
-            for (note, _) in bob_notes {
-                println!("Bob's note ID: {}", note.id());
-            }
-            break;
-        } else {
-            println!(
-                "Bob currently has {} consumable notes. Waiting for {}...",
-                bob_note_count, expected_note_count
-            );
-            tokio::time::sleep(Duration::from_secs(5)).await;
-        }
-    }
+    println!("and then Alice sent 5 separate 50-token notes to 5 different users.");
 
     Ok(())
 }
