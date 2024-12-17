@@ -1,4 +1,4 @@
-default_account_id = "0x8d03743cf76f4a95"
+default_account_id = "0x8a35215eabae3321"
 token_symbol_map_filepath = "token_symbol_map.toml"
 
 [rpc]
